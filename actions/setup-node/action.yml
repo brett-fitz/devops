@@ -1,0 +1,43 @@
+name: 'Setup Node'
+description: 'Setup Node.js for use in actions by installing a version and adding to PATH'
+
+
+inputs:
+
+  cache-dependency-path:
+    description: 'Path to the dependency file(s) to use for caching'
+    required: false
+    default: '**/package-lock.json'
+  
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+  
+  node-version:
+    description: 'The version of node to use'
+    required: false
+    default: '18.x'
+  
+  cache:
+    description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.'
+    required: false
+    default: 'npm'
+
+
+runs:
+
+  using: composite
+  steps:
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4.0.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: ${{ inputs.cache }}
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+    
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npm ci && echo "${PWD}/node_modules/.bin" >> $GITHUB_PATH

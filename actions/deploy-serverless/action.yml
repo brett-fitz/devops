@@ -1,0 +1,74 @@
+name: 'Deploy Serverless'
+description: 'Deploy Serverless Framework applications'
+
+
+inputs:
+
+  # AWS Credentials
+  role-to-assume:
+    description: 'Role to assume'
+    required: false
+    default: ''
+
+  aws-region:
+    description: 'The region to deploy to'
+    required: false
+    default: 'us-east-1'
+
+  profile:
+    description: 'AWS profile to setup'
+    required: false
+    default: 'public'
+  
+  # Node
+  cache-dependency-path:
+    description: 'Path to the dependency file(s) to use for caching'
+    required: false
+    default: '**/package-lock.json'
+  
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+  
+  node-version:
+    description: 'The version of node to use'
+    required: false
+    default: '18.x'
+  
+  cache:
+    description: 'Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.'
+    required: false
+    default: 'npm'
+
+  # Serverless
+  stage:
+    description: 'The stage to deploy to'
+    required: false
+    default: ${{ github.ref_name }}
+
+
+runs:
+
+  using: composite
+  steps:
+
+    - name: Setup AWS Credentials
+      uses: brett-fitz/devops/actions/setup-aws@main
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.role-to-assume }}
+        profile: ${{ inputs.profile }}
+
+    - name: Setup Node & Install Dependencies
+      uses: brett-fitz/devops/actions/setup-node@main
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: ${{ inputs.cache }}
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+        working-directory: ${{ inputs.working-directory }}
+    
+    - name: Deploy Serverless
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npx serverless deploy --stage ${{ inputs.stage }} --region ${{ inputs.aws-region }} --verbose
