@@ -1,0 +1,45 @@
+service: github-oidc
+
+provider:
+
+  name: aws
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  stackName: ${self:service}-${self:provider.stage}
+
+  logRetentionInDays: 7
+
+  tags:
+    project: ${self:service}
+    environment: ${self:provider.stage}
+    purpose: GitHub OIDC provider for AWS
+
+
+resources:
+  Resources:
+
+    GitHubOIDCProvider:
+      Type: AWS::IAM::OIDCProvider
+      Properties:
+        ClientIdList:
+          - sts.amazonaws.com
+        ThumbprintList:
+          - 6938fd4d98bab03faadb97b34396831e3780aea1
+          - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+        Url: https://token.actions.githubusercontent.com
+
+    GitHubOIDCProviderRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRoleWithWebIdentity
+              Principal:
+                Federated: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/${self:provider.region}.amazonaws.com/${self:provider.stage}/GitHubOIDCProvider
+
+              Condition:
+                StringEquals:
+                  tokens.actions.githubusercontent.com:aud: 'sts.amazonaws.com'
+                  tokens.actions.githubusercontent.com:sub: 'repo:$brett-fitz/*'
+    
